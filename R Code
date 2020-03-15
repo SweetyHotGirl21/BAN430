@@ -93,7 +93,7 @@ GDP.train.decomp.mult = decompose(GDP.train, type="multiplicative")
 (GDP.train) %>% decompose(type="multiplicative") %>%
   autoplot() + xlab("Quater") +
   scale_y_continuous(name="in Thousands", labels = dollar)
-  ggtitle("Classical multiplicative decomposition of GDP")
+ggtitle("Classical multiplicative decomposition of GDP")
 
 #X11 decomposition
 GDP.train.decomp.x11 = (GDP.train) %>% seas(x11="")
@@ -230,8 +230,8 @@ Box.test(GDP.train.ets.auto$residuals, lag = 10, fitdf = 0, type = "Lj")
 
 #Shapiro_wilk test for residul normality
 shapiro.test(GDP.train.ets.auto$residuals)
-  
-  
+
+
 #Simple forecasting methods to compare with
 autoplot(window(GDP.train, start = c(2005,1)), series = "Training Data") +
   autolayer(meanf(GDP.train, h = h20, bootstrap = TRUE), series = "Mean", PI = FALSE)+
@@ -401,29 +401,30 @@ autoplot(window(GDP.train.diff, start = c(2005,1)), series = "Training Data")+
   autolayer(diff(log(GDP.test), lag = 1), series = "Test Data")+
   ggtitle("Forecasting first differenc Log(GDP) with diffrent Unemployment rates")+xlab("Quater")+ylab("Differnce")
 
+r = seq(1, 10)
 
 #time series cross-validation
-GDPfore = tsCV(GDP.train, rwf, h = 2) 
-summary(GDPfore)
+GDP.tsCV = tsCV(GDP.train, rwf, h = 2) 
+summary(GDP.tsCV)
 
-tsCV_self = function(ts, fcfunction, h=1){
-  ts = as.ts(ts)
-  n = length(ts)
-  m = ts(matrix(NA, nrow = n, ncol = h))
-  tsp(m) = tsp(ts)
-  indx = seq(1, n - 1L)
+tsCV_self = function(ts, fcfunction, h=1){ #creating the tsCV_self function which takes an timeseries, a forecasting function and h as attributes
+  ts = as.ts(ts)                #creating a time series object
+  n = length(ts)                #defining the length of the output matrix 
+  m = ts(matrix(NA, nrow = n, ncol = h)) #constrction of the output matrix, in the first place filled with "NA" which will be overwritten by the function
+  tsp(m) = tsp(ts)              #Ensures that the final matirx has the same time series attributes like the given timeseries, (start, end, frequency)
+  indx = seq(1, n - 1L)         
   for (i in indx) {
-    ts.subset = subset(
+    ts.subset = subset(         #defining the subset
       ts,
       start = 1L,
       end = i
     )
-    fc = fcfunction(ts.subset, h = h)
-    if (!is.element("try-error", class(fc))) {
-      m[i, ] = ts[i + (1:h)] - fc$mean
+    fc = fcfunction(ts.subset, h = h) #applying the forecast function successively on the subset
+    if (!is.element("try-error", class(fc))) { #making sure that no error has occured 
+      m[i, ] = ts[i + (1:h)] - fc$mean         #Calculating the errors and writing them into the output matrix
     }
   }  
-  if (h == 1) {
+  if (h == 1) { #if h=1 the output is given as a vector
     return(m[, 1L])
   } else {
     colnames(m) = paste("h=", 1:h, sep = "")
@@ -432,6 +433,3 @@ tsCV_self = function(ts, fcfunction, h=1){
 }
 
 t = tsCV_self(GDP.train, rwf, h = 2)
-
-
-##'!!!! Information Creteria: AIC!!!! Prefered
